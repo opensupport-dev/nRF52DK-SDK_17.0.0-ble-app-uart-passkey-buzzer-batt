@@ -49,6 +49,42 @@
 #define NRF_LOG_DEFERRED 1
 #endif
 //NRF_LOG enable<=
+
+//pwm=>
+#ifndef APP_PWM_ENABLED
+#define APP_PWM_ENABLED 1
+#endif
+  //timer=>
+#ifndef TIMER_ENABLED
+#define TIMER_ENABLED 1
+#endif
+#ifndef TIMER0_ENABLED
+#define TIMER0_ENABLED 1
+#endif
+#ifndef TIMER1_ENABLED
+#define TIMER1_ENABLED 1
+#endif
+
+#ifndef NRFX_TIMER_ENABLED
+#define NRFX_TIMER_ENABLED 1
+#endif
+#ifndef NRFX_TIMER0_ENABLED
+#define NRFX_TIMER0_ENABLED 1
+#endif
+#ifndef NRFX_TIMER1_ENABLED
+#define NRFX_TIMER1_ENABLED 1
+#endif
+  //timer<=
+    //ppi=>
+#ifndef PPI_ENABLED
+#define PPI_ENABLED 1
+#endif
+#ifndef NRFX_PPI_ENABLED
+#define NRFX_PPI_ENABLED 1
+#endif
+    //ppi<=
+//pwm<=
+
 #endif
 
 #if (0)

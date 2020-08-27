@@ -51,6 +51,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 #include "nordic_common.h"
 #include "nrf.h"
 #include "ble_hci.h"
@@ -87,6 +88,10 @@
 #include "peer_manager.h"
 #include "peer_manager_handler.h"
 #include "fds.h"
+
+#include "app_error.h"
+#include "bsp.h"
+#include "app_pwm.h"
 #endif
 
 #define APP_BLE_CONN_CFG_TAG            1                                           /**< A tag identifying the SoftDevice BLE configuration. */
@@ -137,6 +142,9 @@
 
 //APP_TIMER_DEF(m_sec_req_timer_id);
 //APP_TIMER_DEF(m_battery_timer_id);
+
+APP_PWM_INSTANCE(PWM1,1);                   // Create the instance "PWM1" using TIMER1.
+static volatile bool ready_flag;            // A flag indicating PWM status.
 
 BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT);                                   /**< BLE NUS service instance. */
 NRF_BLE_GATT_DEF(m_gatt);                                                           /**< GATT module instance. */
@@ -206,6 +214,97 @@ static void battery_level_meas_timeout_handler(void * p_context)
     battery_level_update();
 }
 */
+
+void pwm_play_buzzer(void)
+{
+    uint8_t i;
+    uint32_t duty;
+
+    NRF_LOG_INFO("pwm_play_buzzer =>");
+    for (i = 0; i < 40; ++i)
+    {
+        duty = (i < 20) ? (i * 5) : (100 - (i - 20) * 5);
+        
+        ready_flag = false;
+        /* Set the duty cycle - keep trying until PWM is ready... */
+        while (app_pwm_channel_duty_set(&PWM1, 0, duty) == NRF_ERROR_BUSY);
+
+        /* ... or wait for callback. */
+        //while (!ready_flag);
+        //APP_ERROR_CHECK(app_pwm_channel_duty_set(&PWM1, 1, duty));
+        nrf_delay_ms(300);
+    }
+    app_pwm_disable(&PWM1);
+}
+
+void pwm_play_buzzer_duration(uint32_t duration)
+{
+    uint8_t i;
+    uint32_t duty = 50;
+
+    NRF_LOG_INFO("pwm_play_buzzer_duration =>");    
+    ready_flag = false;
+
+    /* Set the duty cycle - keep trying until PWM is ready... */
+    while (app_pwm_channel_duty_set(&PWM1, 0, duty) == NRF_ERROR_BUSY);
+
+    /* ... or wait for callback. */
+    //while (!ready_flag);
+    //APP_ERROR_CHECK(app_pwm_channel_duty_set(&PWM1, 1, duty));
+    nrf_delay_ms(duration);
+    app_pwm_disable(&PWM1);
+}
+
+void pwm_ready_callback(uint32_t pwm_id)    // PWM callback function
+{
+    NRF_LOG_INFO("pwm_ready_callback =>");
+    ready_flag = true;
+}
+
+/*
+ init, Once executed
+ */
+void pwm_init(void) 
+{
+    ret_code_t err_code;
+    /* 1-channel PWM, 200Hz, output on DK LED pins. */
+    app_pwm_config_t pwm1_cfg = APP_PWM_DEFAULT_CONFIG_1CH(5000L, BUZZER_PIN);
+    
+    /* Switch the polarity of the second channel. */
+    pwm1_cfg.pin_polarity[1] = APP_PWM_POLARITY_ACTIVE_HIGH;
+    
+    /* Initialize and enable PWM. */
+    err_code = app_pwm_init(&PWM1,&pwm1_cfg,pwm_ready_callback);
+    APP_ERROR_CHECK(err_code);
+    app_pwm_enable(&PWM1);
+}
+
+
+/*
+ pwm_change_frequency,Can be executed multiple times
+ */
+void pwm_change_frequency(uint16_t freq)  
+{
+    ret_code_t err_code;
+    uint16_t period_us = 1000000;
+    
+    //app_pwm_disable(&PWM1);
+    app_pwm_uninit(&PWM1);
+      
+    period_us /= freq;
+
+     /* 1-channel PWM, 200Hz, output on DK LED pins. */
+    app_pwm_config_t pwm1_cfg = APP_PWM_DEFAULT_CONFIG_1CH(period_us, BUZZER_PIN);
+    
+    /* Switch the polarity of the second channel. */
+    pwm1_cfg.pin_polarity[1] = APP_PWM_POLARITY_ACTIVE_HIGH;
+    
+    /* Initialize and enable PWM. */
+    err_code = app_pwm_init(&PWM1,&pwm1_cfg,pwm_ready_callback);
+    APP_ERROR_CHECK(err_code);
+    app_pwm_enable(&PWM1);
+    
+}
 
 /**@brief Function for the Timer initialization.
  *
@@ -526,8 +625,6 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
  * @param[in]   p_ble_evt   Bluetooth stack event.
  * @param[in]   p_context   Unused.
  */
-#if (1)
-
 static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 {
     uint32_t err_code;
@@ -610,7 +707,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
             NRF_LOG_INFO("Passkey: %s", nrf_log_push(passkey));
         } break;
-        
+   
+    #if (0)
         case BLE_GAP_EVT_AUTH_KEY_REQUEST: //Peripheral display
            NRF_LOG_INFO("BLE_GAP_EVT_AUTH_KEY_REQUEST");
            uint8_t passkey[] = "123456"; 
@@ -620,7 +718,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
                APP_ERROR_CHECK(err_code);
            }
             break;
-
+    #endif
+      
         case BLE_GAP_EVT_LESC_DHKEY_REQUEST:
             NRF_LOG_INFO("BLE_GAP_EVT_LESC_DHKEY_REQUEST");
             break;
@@ -639,177 +738,6 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             break;
     }
 }
-#else
-static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
-{
-    uint32_t err_code;
-
-    switch (p_ble_evt->header.evt_id)
-    {
-        case BLE_GAP_EVT_CONNECTED:
-        {
-            NRF_LOG_INFO("Connected");            
-            //err_code = bsp_indication_set(BSP_INDICATE_CONNECTED);
-            //APP_ERROR_CHECK(err_code);
-            m_peer_to_be_deleted = PM_PEER_ID_INVALID;
-
-            m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-            err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
-            APP_ERROR_CHECK(err_code);
-        } break;
-
-        case BLE_GAP_EVT_DISCONNECTED:
-        {
-            NRF_LOG_INFO("Disconnected");
-            // LED indication will be changed when advertising starts.
-            m_conn_handle = BLE_CONN_HANDLE_INVALID;
-
-        #if defined(PEER_MNG)
-            // Check if the last connected peer had not used MITM, if so, delete its bond information.
-            if (m_peer_to_be_deleted != PM_PEER_ID_INVALID)
-            {
-                err_code = pm_peer_delete(m_peer_to_be_deleted);
-                APP_ERROR_CHECK(err_code);
-                NRF_LOG_DEBUG("Collector's bond deleted");
-                m_peer_to_be_deleted = PM_PEER_ID_INVALID;
-            }
-        #endif
-        } break;
-
-        case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
-        {
-            NRF_LOG_DEBUG("PHY update request.");
-            ble_gap_phys_t const phys =
-            {
-                .rx_phys = BLE_GAP_PHY_AUTO,
-                .tx_phys = BLE_GAP_PHY_AUTO,
-            };
-            err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
-            APP_ERROR_CHECK(err_code);
-        } break;
-
-        case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
-        {
-            NRF_LOG_INFO("BLE_GAP_EVT_SEC_PARAMS_REQUEST");
-
-         } break;
-
-
-        case BLE_GAP_EVT_PASSKEY_DISPLAY:
-        {
-            char passkey[PASSKEY_LENGTH + 1];
-            memcpy(passkey, p_ble_evt->evt.gap_evt.params.passkey_display.passkey, PASSKEY_LENGTH);
-            passkey[PASSKEY_LENGTH] = 0;
-
-            NRF_LOG_INFO("Passkey: %s", nrf_log_push(passkey));
-
-        } break;
-        
-        case BLE_GAP_EVT_AUTH_KEY_REQUEST:
-        {
-        #if 0
-            NRF_LOG_INFO("BLE_GAP_EVT_AUTH_KEY_REQUEST");
-        #else
-           NRF_LOG_INFO("GAP Passkey request.");
-           uint8_t passkey[] = "123456"; 
-           if (p_ble_evt->evt.gap_evt.params.auth_key_request.key_type == BLE_GAP_AUTH_KEY_TYPE_PASSKEY)
-           {
-               err_code = sd_ble_gap_auth_key_reply(p_ble_evt->evt.gap_evt.conn_handle, BLE_GAP_AUTH_KEY_TYPE_PASSKEY, passkey);
-               APP_ERROR_CHECK(err_code);
-           }
-        #endif
-         
-        } break;
-
-#if !defined (S112)
-         case BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST:
-        {
-            NRF_LOG_INFO("BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST");
-            ble_gap_data_length_params_t dl_params;
-
-            // Clearing the struct will effectivly set members to @ref BLE_GAP_DATA_LENGTH_AUTO
-            memset(&dl_params, 0, sizeof(ble_gap_data_length_params_t));
-            err_code = sd_ble_gap_data_length_update(p_ble_evt->evt.gap_evt.conn_handle, &dl_params, NULL);
-            APP_ERROR_CHECK(err_code);
-        } break;
-#endif //!defined (S112)
-
-        case BLE_EVT_USER_MEM_REQUEST:
-        {
-            NRF_LOG_INFO("BLE_EVT_USER_MEM_REQUEST");
-        #if (0)//Used as ported.
-            err_code = sd_ble_user_mem_reply(m_conn_handle, NULL);
-        #else    
-            err_code = sd_ble_user_mem_reply(p_ble_evt->evt.gattc_evt.conn_handle, NULL);
-        #endif    
-            APP_ERROR_CHECK(err_code);
-        }
-            break;
-
-        case BLE_GATTS_EVT_SYS_ATTR_MISSING:
-        {
-            // No system attributes have been stored.
-            NRF_LOG_INFO("BLE_GATTS_EVT_SYS_ATTR_MISSING");
-            err_code = sd_ble_gatts_sys_attr_set(m_conn_handle, NULL, 0, 0);
-            APP_ERROR_CHECK(err_code);
-        }   break;
-
-        case BLE_GATTC_EVT_TIMEOUT:
-        {
-            // Disconnect on GATT Client timeout event.
-            NRF_LOG_DEBUG("GATT Client Timeout.");
-            err_code = sd_ble_gap_disconnect(p_ble_evt->evt.gattc_evt.conn_handle,
-                                             BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
-            APP_ERROR_CHECK(err_code);
-        } break;
-
-        case BLE_GATTS_EVT_TIMEOUT:
-        {
-            // Disconnect on GATT Server timeout event.
-            NRF_LOG_DEBUG("GATT Server Timeout.");
-            err_code = sd_ble_gap_disconnect(p_ble_evt->evt.gatts_evt.conn_handle,
-                                             BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
-            APP_ERROR_CHECK(err_code);
-        } break;
-
-        case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST:
-        {
-            NRF_LOG_INFO("BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST");
-            ble_gatts_evt_rw_authorize_request_t  req;
-            ble_gatts_rw_authorize_reply_params_t auth_reply;
-
-            req = p_ble_evt->evt.gatts_evt.params.authorize_request;
-
-            if (req.type != BLE_GATTS_AUTHORIZE_TYPE_INVALID)
-            {
-                if ((req.request.write.op == BLE_GATTS_OP_PREP_WRITE_REQ)     ||
-                    (req.request.write.op == BLE_GATTS_OP_EXEC_WRITE_REQ_NOW) ||
-                    (req.request.write.op == BLE_GATTS_OP_EXEC_WRITE_REQ_CANCEL))
-                {
-                    if (req.type == BLE_GATTS_AUTHORIZE_TYPE_WRITE)
-                    {
-                        auth_reply.type = BLE_GATTS_AUTHORIZE_TYPE_WRITE;
-                    }
-                    else
-                    {
-                        auth_reply.type = BLE_GATTS_AUTHORIZE_TYPE_READ;
-                    }
-                    auth_reply.params.write.gatt_status = NRF_ERROR_NOT_SUPPORTED; //APP_FEATURE_NOT_SUPPORTED;//NRF_ERROR_NOT_SUPPORTED
-                    err_code = sd_ble_gatts_rw_authorize_reply(p_ble_evt->evt.gatts_evt.conn_handle,
-                                                               &auth_reply);
-                    APP_ERROR_CHECK(err_code);
-                }
-            }
-        } break; // BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST
-
-
-        default:
-            // No implementation needed.
-            break;
-    }
-}
-
-#endif
 
 
 /**@brief Function for the SoftDevice initialization.
@@ -1105,15 +1033,22 @@ static void do_delete_disconnect_over_5sec(void)
   advertising_start(true);
 }
 
+static void do_play_buzzer(void)
+{
+  pwm_play_buzzer_duration(300);
+  app_pwm_enable(&PWM1);
+}
+
 static void app_button_event_generator(void)
 {
   if ((pressed_duration >= 2000) && (pressed_duration < 5000) ){ //over 2sec
-    // Do something
+
     NRF_LOG_INFO("Button pressed for 2sec...");
+    do_play_buzzer();
 
   }else if((pressed_duration >= 5000) && (pressed_duration < 10000)){ //over 5sec
     NRF_LOG_INFO("Button pressed for 5sec...");
-
+    //Do nothing here.//
     /*
     if (over5sec_cnt){      
       //do_advertising_start_over_5sec();
@@ -1125,7 +1060,6 @@ static void app_button_event_generator(void)
     }
     */
     
-    //do_delete_disconnect_over_5sec();
   }
   
   app_button_init_time_variable();
@@ -1186,9 +1120,9 @@ static void app_buttons_init(void)
 {
   uint32_t err_code;
 
-  static const app_button_cfg_t freenanum_app_buttons[BUTTONS_NUMBER] =
+  static const app_button_cfg_t app_buttons[BUTTONS_NUMBER] =
   {
-#ifdef BOARD_FREENANUM_V1
+#if (1)
     #ifdef APP_BTN_1
     {APP_BTN_1, false, BUTTON_PULL, app_button_event_handler},
     #endif // APP_BTN_1
@@ -1196,39 +1130,11 @@ static void app_buttons_init(void)
     #ifdef BSP_BUTTON_0
     {BSP_BUTTON_0, false, BUTTON_PULL, bsp_button_event_handler},
     #endif // BUTTON_0
-
-    #ifdef BSP_BUTTON_1
-    {BSP_BUTTON_1, false, BUTTON_PULL, bsp_button_event_handler},
-    #endif // BUTTON_1
-
-    #ifdef BSP_BUTTON_2
-    {BSP_BUTTON_2, false, BUTTON_PULL, bsp_button_event_handler},
-    #endif // BUTTON_2
-
-    #ifdef BSP_BUTTON_3
-    {BSP_BUTTON_3, false, BUTTON_PULL, bsp_button_event_handler},
-    #endif // BUTTON_3
-
-    #ifdef BSP_BUTTON_4
-    {BSP_BUTTON_4, false, BUTTON_PULL, bsp_button_event_handler},
-    #endif // BUTTON_4
-
-    #ifdef BSP_BUTTON_5
-    {BSP_BUTTON_5, false, BUTTON_PULL, bsp_button_event_handler},
-    #endif // BUTTON_5
-
-    #ifdef BSP_BUTTON_6
-    {BSP_BUTTON_6, false, BUTTON_PULL, bsp_button_event_handler},
-    #endif // BUTTON_6
-
-    #ifdef BSP_BUTTON_7
-    {BSP_BUTTON_7, false, BUTTON_PULL, bsp_button_event_handler},
-    #endif // BUTTON_7
 #endif
   };
 
-  err_code = app_button_init((app_button_cfg_t *)freenanum_app_buttons,
-                                       BUTTONS_NUMBER,
+  err_code = app_button_init((app_button_cfg_t *)app_buttons,
+                                       BUTTONS_NUMBER,        // 1
                                        APP_TIMER_TICKS(50));
   APP_ERROR_CHECK(err_code);
 }
@@ -1386,6 +1292,7 @@ int main(void)
 
     err_code = app_button_enable();
     APP_ERROR_CHECK(err_code);
+    pwm_init();
 
     // Start execution.
     printf("\r\nUART started.\r\n");

@@ -1,8 +1,9 @@
 Output/ble_app_uart_peer_batt_buzzer\ Release/Obj/main.o: \
- E:\nRF5_SDK_17.0.0_9d13099\examples\ble_peripheral\ble_app_uart-freeNanum4\main.c \
+ E:\nRF5_SDK_17.0.0_9d13099\examples\ble_peripheral\ble_app_uart-buzzer-batt\main.c \
  C:/Program\ Files/SEGGER/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.40/include/stdint.h \
  C:/Program\ Files/SEGGER/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.40/include/string.h \
  C:/Program\ Files/SEGGER/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.40/include/__crossworks.h \
+ C:/Program\ Files/SEGGER/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.40/include/stdbool.h \
  ../../../../../../components/libraries/util/nordic_common.h \
  ../../../../../../modules/nrfx/mdk/nrf.h \
  ../../../../../../modules/nrfx/mdk/nrf52.h \
@@ -18,7 +19,6 @@ Output/ble_app_uart_peer_batt_buzzer\ Release/Obj/main.o: \
  ../../../../../../modules/nrfx/mdk/compiler_abstraction.h \
  ../../../../../../components/softdevice/s132/headers/ble_hci.h \
  ../../../../../../components/ble/common/ble_advdata.h \
- C:/Program\ Files/SEGGER/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.40/include/stdbool.h \
  ../../../../../../components/softdevice/s132/headers/ble.h \
  ../../../../../../components/softdevice/s132/headers/nrf_svc.h \
  ../../../../../../components/softdevice/s132/headers/nrf_error.h \
@@ -125,4 +125,12 @@ Output/ble_app_uart_peer_batt_buzzer\ Release/Obj/main.o: \
  ../../../../../../components/ble/peer_manager/peer_manager_internal.h \
  ../../../../../../components/ble/peer_manager/peer_manager_handler.h \
  ../../../../../../components/ble/peer_manager/peer_manager.h \
- ../../../../../../components/libraries/fds/fds.h
+ ../../../../../../components/libraries/fds/fds.h \
+ ../../../../../../components/libraries/bsp/bsp.h \
+ ../../../../../../components/libraries/pwm/app_pwm.h \
+ ../../../../../../integration/nrfx/legacy/nrf_drv_timer.h \
+ ../../../../../../modules/nrfx/drivers/include/nrfx_timer.h \
+ ../../../../../../modules/nrfx/hal/nrf_timer.h \
+ ../../../../../../integration/nrfx/legacy/nrf_drv_ppi.h \
+ ../../../../../../modules/nrfx/drivers/include/nrfx_ppi.h \
+ ../../../../../../modules/nrfx/hal/nrf_ppi.h
