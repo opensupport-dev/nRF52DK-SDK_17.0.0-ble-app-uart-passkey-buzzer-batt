@@ -1,0 +1,14 @@
+<info> app_timer: RTC: initialized.
+<info> app: Glucose example started.
+<info> app: Fast advertising
+<info> app: Connected
+<info> app: Passkey: 551127
+<info> app: BLE_GAP_EVT_LESC_DHKEY_REQUEST
+<info> nrf_ble_lesc: Calling sd_ble_gap_lesc_dhkey_reply on conn_handle: 0
+<info> peer_manager_handler: Connection secured: role: Peripheral, conn_handle: 0, procedure: Bonding
+<info> app: Link secured. Role: 1. conn_handle: 0, Procedure: 1
+<info> app: BLE_GAP_EVT_AUTH_STATUS: status=0x0 bond=0x1 lv4: 1 kdist_own:0x3 kdist_peer:0x2
+<info> peer_manager_handler: Peer data updated in flash: peer_id: 0, data_id: Bonding data, action: Update
+<info> peer_manager_handler: Peer data updated in flash: peer_id: 0, data_id: Peer rank, action: Update
+<info> peer_manager_handler: Peer data updated in flash: peer_id: 0, data_id: Local database, action: Update
+<info> peer_manager_handler: Peer data updated in flash: peer_id: 0, data_id: Central address resolution, action: Update

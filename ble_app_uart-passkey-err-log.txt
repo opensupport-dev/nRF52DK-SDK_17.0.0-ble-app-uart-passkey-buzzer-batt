@@ -1,0 +1,9 @@
+<info> peer_manager_handler: Peer data updated in flash: peer_id: 0, data_id: Peer rank, action: Update, no change
+<warning> peer_manager_gcm: The local database has changed, so some subscriptions to notifications and indications could not be restored for conn_handle 0
+<warning> peer_manager_handler: Local DB could not be applied: conn_handle: 0, peer_id: 0
+<info> app: Connected
+<info> app: Data len is set to 0xF4(244)
+<info> peer_manager_handler: Connection security failed: role: Peripheral, conn_handle: 0x0, procedure: Bonding, error: 133
+<warning> peer_manager_handler: Disconnecting conn_handle 0.
+<info> app: BLE_GAP_EVT_AUTH_STATUS: status=0x85 bond=0x0 lv4: 0 kdist_own:0x0 kdist_peer:0x0
+<info> app: Disconnected
