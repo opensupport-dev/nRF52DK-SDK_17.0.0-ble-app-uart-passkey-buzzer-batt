@@ -152,6 +152,9 @@ static nrf_saadc_value_t     m_buffer_pool[2][SAMPLES_IN_BUFFER];
 static nrf_ppi_channel_t     m_ppi_channel;
 static uint32_t              m_adc_evt_counter;
 
+//APP_TIMER_DEF(m_sec_req_timer_id);
+//APP_TIMER_DEF(m_battery_timer_id);
+
 APP_PWM_INSTANCE(PWM1,1);                   // Create the instance "PWM1" using TIMER1.
 static volatile bool ready_flag;            // A flag indicating PWM status.
 
@@ -183,6 +186,67 @@ static ble_uuid_t m_adv_uuids[]          =                                      
 void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
 {
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
+}
+/**@brief Function for performing battery measurement and updating the Battery Level characteristic
+ *        in Battery Service.
+ */
+/*
+static void battery_level_update(void)
+{
+    ret_code_t err_code;
+    uint8_t  battery_level;
+
+    battery_level = (uint8_t)sensorsim_measure(&m_battery_sim_state, &m_battery_sim_cfg);
+
+    err_code = ble_bas_battery_level_update(&m_bas, battery_level, BLE_CONN_HANDLE_ALL);
+    if ((err_code != NRF_SUCCESS) &&
+        (err_code != NRF_ERROR_INVALID_STATE) &&
+        (err_code != NRF_ERROR_RESOURCES) &&
+        (err_code != NRF_ERROR_BUSY) &&
+        (err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING)
+       )
+    {
+        APP_ERROR_HANDLER(err_code);
+    }
+}
+*/
+
+
+/**@brief Function for handling the Battery measurement timer timeout.
+ *
+ * @details This function will be called each time the battery level measurement timer expires.
+ *
+ * @param[in] p_context  Pointer used for passing some arbitrary information (context) from the
+ *                       app_start_timer() call to the timeout handler.
+ */
+/*
+static void battery_level_meas_timeout_handler(void * p_context)
+{
+    UNUSED_PARAMETER(p_context);
+    battery_level_update();
+}
+*/
+
+void pwm_play_buzzer(void)
+{
+    uint8_t i;
+    uint32_t duty;
+
+    NRF_LOG_INFO("pwm_play_buzzer =>");
+    for (i = 0; i < 40; ++i)
+    {
+        duty = (i < 20) ? (i * 5) : (100 - (i - 20) * 5);
+        
+        ready_flag = false;
+        /* Set the duty cycle - keep trying until PWM is ready... */
+        while (app_pwm_channel_duty_set(&PWM1, 0, duty) == NRF_ERROR_BUSY);
+
+        /* ... or wait for callback. */
+        //while (!ready_flag);
+        //APP_ERROR_CHECK(app_pwm_channel_duty_set(&PWM1, 1, duty));
+        nrf_delay_ms(300);
+    }
+    app_pwm_disable(&PWM1);
 }
 
 void pwm_play_buzzer_duration(uint32_t duration)
@@ -227,6 +291,32 @@ void pwm_init(void)
     app_pwm_enable(&PWM1);
 }
 
+
+/*
+ pwm_change_frequency,Can be executed multiple times
+ */
+void pwm_change_frequency(uint16_t freq)  
+{
+    ret_code_t err_code;
+    uint16_t period_us = 1000000;
+    
+    //app_pwm_disable(&PWM1);
+    app_pwm_uninit(&PWM1);
+      
+    period_us /= freq;
+
+     /* 1-channel PWM, 200Hz, output on DK LED pins. */
+    app_pwm_config_t pwm1_cfg = APP_PWM_DEFAULT_CONFIG_1CH(period_us, BUZZER_PIN);
+    
+    /* Switch the polarity of the second channel. */
+    pwm1_cfg.pin_polarity[1] = APP_PWM_POLARITY_ACTIVE_HIGH;
+    
+    /* Initialize and enable PWM. */
+    err_code = app_pwm_init(&PWM1,&pwm1_cfg,pwm_ready_callback);
+    APP_ERROR_CHECK(err_code);
+    app_pwm_enable(&PWM1);
+    
+}
 
 /**@brief Function for the Timer initialization.
  *
@@ -282,6 +372,9 @@ static void gap_params_init(void)
                                           (const uint8_t *)DEVICE_NAME,
                                           strlen(DEVICE_NAME));
     APP_ERROR_CHECK(err_code);
+
+    //err_code = sd_ble_gap_appearance_set(BLE_APPEARANCE_GENERIC_GLUCOSE_METER);
+    //APP_ERROR_CHECK(err_code);
 
     memset(&gap_conn_params, 0, sizeof(gap_conn_params));
 
@@ -396,6 +489,20 @@ static void services_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
+/**@brief Function for initializing the sensor simulators.
+ */
+/*
+static void sensor_simulator_init(void)
+{
+    m_battery_sim_cfg.min          = MIN_BATTERY_LEVEL;
+    m_battery_sim_cfg.max          = MAX_BATTERY_LEVEL;
+    m_battery_sim_cfg.incr         = BATTERY_LEVEL_INCREMENT;
+    m_battery_sim_cfg.start_at_max = true;
+
+    sensorsim_init(&m_battery_sim_state, &m_battery_sim_cfg);
+}
+*/
+
 /**@brief Function for starting timers.
  */
 static void application_timers_start(void)
@@ -410,6 +517,14 @@ static void application_timers_start(void)
 
     APP_ERROR_CHECK(err_code); 
 */
+/*
+   // Start application timers.
+    err_code = app_timer_start(m_battery_timer_id, BATTERY_LEVEL_MEAS_INTERVAL, NULL);
+    APP_ERROR_CHECK(err_code);
+*/
+
+
+
 }
 
 
@@ -477,6 +592,12 @@ static void conn_params_init(void)
 static void sleep_mode_enter(void)
 {
     uint32_t err_code;
+    //err_code = bsp_indication_set(BSP_INDICATE_IDLE);
+    //APP_ERROR_CHECK(err_code);
+
+    // Prepare wakeup buttons.
+    //err_code = bsp_btn_ble_sleep_mode_prepare();
+    //APP_ERROR_CHECK(err_code);
 
     // Go to system-off mode (this function will not return; wakeup will cause a reset).
     err_code = sd_power_system_off();
@@ -497,6 +618,8 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
     switch (ble_adv_evt)
     {
         case BLE_ADV_EVT_FAST:
+            //err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING);
+            //APP_ERROR_CHECK(err_code);
             break;// BLE_ADV_EVT_FAST
         case BLE_ADV_EVT_IDLE:
             sleep_mode_enter();
@@ -539,9 +662,12 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
         {
             NRF_LOG_INFO("Connected");
             m_peer_to_be_deleted = PM_PEER_ID_INVALID;
+            //err_code = bsp_indication_set(BSP_INDICATE_CONNECTED);
+            //APP_ERROR_CHECK(err_code);
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
             APP_ERROR_CHECK(err_code);
+            // Start Security Request timer.
         } break;
 
         case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
@@ -555,6 +681,16 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
             APP_ERROR_CHECK(err_code);
         } break;
+
+
+
+        case BLE_GATTS_EVT_SYS_ATTR_MISSING:
+#if (0)
+            // No system attributes have been stored.
+            err_code = sd_ble_gatts_sys_attr_set(m_conn_handle, NULL, 0, 0);
+            APP_ERROR_CHECK(err_code);
+#endif
+            break;
 
         case BLE_GATTC_EVT_TIMEOUT:
             // Disconnect on GATT Client timeout event.
@@ -584,6 +720,18 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             NRF_LOG_INFO("Passkey: %s", nrf_log_push(passkey));
         } break;
    
+    #if (0)
+        case BLE_GAP_EVT_AUTH_KEY_REQUEST: //Peripheral display
+           NRF_LOG_INFO("BLE_GAP_EVT_AUTH_KEY_REQUEST");
+           uint8_t passkey[] = "123456"; 
+           if (p_ble_evt->evt.gap_evt.params.auth_key_request.key_type == BLE_GAP_AUTH_KEY_TYPE_PASSKEY)
+           {
+               err_code = sd_ble_gap_auth_key_reply(p_ble_evt->evt.gap_evt.conn_handle, BLE_GAP_AUTH_KEY_TYPE_PASSKEY, passkey);
+               APP_ERROR_CHECK(err_code);
+           }
+            break;
+    #endif
+      
         case BLE_GAP_EVT_LESC_DHKEY_REQUEST:
             NRF_LOG_INFO("BLE_GAP_EVT_LESC_DHKEY_REQUEST");
             break;
@@ -782,6 +930,8 @@ static void advertising_init(void)
     init.advdata.name_type          = BLE_ADVDATA_FULL_NAME;
     init.advdata.include_appearance = false; //true//freeNanum
     init.advdata.flags              = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
+    //init.advdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]); //freeNanum
+    //init.advdata.uuids_complete.p_uuids  = m_adv_uuids;
 
     init.srdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
     init.srdata.uuids_complete.p_uuids  = m_adv_uuids;
@@ -846,6 +996,9 @@ static void idle_state_handle(void)
 {
     ret_code_t err_code;
 
+    //err_code = nrf_ble_lesc_request_handler();  //freeNanum
+    //APP_ERROR_CHECK(err_code);
+
     if (NRF_LOG_PROCESS() == false)
     {
         nrf_pwr_mgmt_run();
@@ -889,6 +1042,18 @@ static void app_button_init_time_variable(void)
 
 static void advertising_start(bool erase_bonds);
 
+static void do_advertising_start_over_5sec(void)
+{
+  NRF_LOG_INFO("Advertising_start...");
+  advertising_start(false);
+}
+
+static void do_delete_disconnect_over_5sec(void)
+{
+  NRF_LOG_INFO("Delete_disconnect...");
+  advertising_start(true);
+}
+
 static void do_play_buzzer(void)
 {
   pwm_play_buzzer_duration(300);
@@ -905,6 +1070,16 @@ static void app_button_event_generator(void)
   }else if((pressed_duration >= 5000) && (pressed_duration < 10000)){ //over 5sec
     NRF_LOG_INFO("Button pressed for 5sec...");
     //Do nothing here.//
+    /*
+    if (over5sec_cnt){      
+      //do_advertising_start_over_5sec();
+      over5sec_cnt = false;
+    }
+    else{
+      do_delete_disconnect_over_5sec();
+      over5sec_cnt = true;
+    }
+    */
     
   }
   
@@ -1269,6 +1444,7 @@ int main(void)
     application_timers_start();
 
     advertising_start(erase_bonds); //false
+
 
 
     // Enter main loop.

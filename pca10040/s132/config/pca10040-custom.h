@@ -44,7 +44,7 @@
 extern "C" {
 #endif
 
-#include "custom_feature.h"
+//#include "custom_feature.h"
 #include "nrf_gpio.h"
 
 #if defined(BOARD_FREENANUM_V1)
@@ -179,10 +179,14 @@ extern "C" {
 #define ARDUINO_A5_PIN              31    // Analog channel 5
 
 #ifdef BOARD_FREENANUM_V1
-#define APP_LED_1 LED_1 //17
-#define APP_BTN_1 BUTTON_1 //13
+#define APP_LED_1 	LED_1 //17
+#define APP_BTN_1 	BUTTON_1 //13
 #define P003		3
 #define BUZZER_PIN 	P003 //3
+
+#define BAT_LED_1   LED_2 //18
+#define BAT_LED_2   LED_3 //19
+#define BAT_LED_3   LED_4 //20
 #else
 #endif
 
