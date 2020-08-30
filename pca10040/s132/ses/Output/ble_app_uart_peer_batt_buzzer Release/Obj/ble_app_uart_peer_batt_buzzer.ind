@@ -48,6 +48,7 @@
 "Output/ble_app_uart_peer_batt_buzzer Release/Obj/nrfx_timer.o"
 "Output/ble_app_uart_peer_batt_buzzer Release/Obj/nrfx_ppi.o"
 "Output/ble_app_uart_peer_batt_buzzer Release/Obj/nrf_drv_ppi.o"
+"Output/ble_app_uart_peer_batt_buzzer Release/Obj/nrfx_saadc.o"
 "Output/ble_app_uart_peer_batt_buzzer Release/Obj/bsp.o"
 "Output/ble_app_uart_peer_batt_buzzer Release/Obj/bsp_btn_ble.o"
 "Output/ble_app_uart_peer_batt_buzzer Release/Obj/main.o"

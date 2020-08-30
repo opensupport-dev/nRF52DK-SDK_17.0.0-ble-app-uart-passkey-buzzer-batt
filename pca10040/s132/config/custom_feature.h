@@ -85,7 +85,24 @@
     //ppi<=
 //pwm<=
 
+//saadc=>
+#ifndef NRFX_SAADC_ENABLED
+#define NRFX_SAADC_ENABLED 0
 #endif
+
+#ifndef SAADC_ENABLED
+#define SAADC_ENABLED 1
+#endif
+  //timer=>
+#ifndef TIMER2_ENABLED
+#define TIMER2_ENABLED 1
+#endif
+#ifndef NRFX_TIMER2_ENABLED
+#define NRFX_TIMER2_ENABLED 1
+#endif
+  //timer<=
+//saadc<=
+#endif//#if (0)
 
 #if (0)
 #ifndef NRF_FSTORAGE_ENABLED

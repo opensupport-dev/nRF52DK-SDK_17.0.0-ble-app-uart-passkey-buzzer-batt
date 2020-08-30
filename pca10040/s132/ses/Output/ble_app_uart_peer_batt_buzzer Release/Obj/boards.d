@@ -54,5 +54,4 @@ Output/ble_app_uart_peer_batt_buzzer\ Release/Obj/boards.o: \
  ../../../../../../components/softdevice/s132/headers/nrf_sd_def.h \
  ../../../../../../components/softdevice/s132/headers/nrf_soc.h \
  ../../../../../../modules/nrfx/drivers/nrfx_errors.h \
- E:\nRF5_SDK_17.0.0_9d13099\components\boards\pca10040.h \
- ../config/custom_feature.h
+ E:\nRF5_SDK_17.0.0_9d13099\components\boards\pca10040.h

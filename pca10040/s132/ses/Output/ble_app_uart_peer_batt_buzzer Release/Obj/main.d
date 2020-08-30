@@ -1,5 +1,5 @@
 Output/ble_app_uart_peer_batt_buzzer\ Release/Obj/main.o: \
- E:\nRF5_SDK_17.0.0_9d13099\examples\ble_peripheral\ble_app_uart-buzzer-batt\main.c \
+ E:\nRF5_SDK_17.0.0_9d13099\examples\ble_peripheral\ble_app_uart-key-buzzer-batt\main.c \
  C:/Program\ Files/SEGGER/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.40/include/stdint.h \
  C:/Program\ Files/SEGGER/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.40/include/string.h \
  C:/Program\ Files/SEGGER/SEGGER\ Embedded\ Studio\ for\ ARM\ 4.40/include/__crossworks.h \
@@ -101,7 +101,6 @@ Output/ble_app_uart_peer_batt_buzzer\ Release/Obj/main.o: \
  ../../../../../../components/softdevice/s132/headers/nrf_soc.h \
  ../../../../../../modules/nrfx/drivers/nrfx_errors.h \
  ../../../../../../components/boards/pca10040.h \
- ../config/custom_feature.h \
  ../../../../../../components/libraries/button/app_button.h \
  ../../../../../../components/libraries/pwr_mgmt/nrf_pwr_mgmt.h \
  ../../../../../../modules/nrfx/hal/nrf_uart.h \
@@ -133,4 +132,7 @@ Output/ble_app_uart_peer_batt_buzzer\ Release/Obj/main.o: \
  ../../../../../../modules/nrfx/hal/nrf_timer.h \
  ../../../../../../integration/nrfx/legacy/nrf_drv_ppi.h \
  ../../../../../../modules/nrfx/drivers/include/nrfx_ppi.h \
- ../../../../../../modules/nrfx/hal/nrf_ppi.h
+ ../../../../../../modules/nrfx/hal/nrf_ppi.h \
+ ../../../../../../integration/nrfx/legacy/nrf_drv_saadc.h \
+ ../../../../../../modules/nrfx/drivers/include/nrfx_saadc.h \
+ ../../../../../../modules/nrfx/hal/nrf_saadc.h

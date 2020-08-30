@@ -56,7 +56,6 @@ Output/ble_app_uart_peer_batt_buzzer\ Release/Obj/bsp.o: \
  ../../../../../../components/softdevice/s132/headers/nrf_soc.h \
  ../../../../../../modules/nrfx/drivers/nrfx_errors.h \
  ../../../../../../components/boards/pca10040.h \
- ../config/custom_feature.h \
  ../../../../../../components/libraries/button/app_button.h \
  ../../../../../../components/libraries/util/app_error.h \
  E:\nRF5_SDK_17.0.0_9d13099\components\libraries\bsp\bsp_config.h \
